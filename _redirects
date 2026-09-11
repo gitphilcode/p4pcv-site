@@ -4,6 +4,7 @@
 /es/                    /p4pcv-redesign-es.html           200
 
 # English pages
+/sign-in                /p4pcv-signin.html                200
 /events                 /p4pcv-events.html                200
 /gallery                /p4pcv-gallery.html                200
 /donate                 /p4pcv-donate.html                200
@@ -13,6 +14,7 @@
 /non-discrimination     /p4pcv-non-discrimination.html    200
 
 # Spanish pages
+/es/sign-in             /p4pcv-signin-es.html             200
 /es/events              /p4pcv-events-es.html             200
 /es/gallery             /p4pcv-gallery-es.html            200
 /es/donate              /p4pcv-donate-es.html             200
