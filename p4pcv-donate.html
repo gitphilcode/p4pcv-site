@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Donate — Paint 4 Peace Children's Village</title>
-<meta name="description" content="Support Paint 4 Peace Children's Village with a one-time or monthly gift.">
+<meta name="description" content="Support Paint 4 Peace Children's Village with a one-time, monthly, or annual gift.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -66,6 +66,17 @@
   .custom-row input{flex:1; padding:12px 14px; border-radius:10px; border:1.5px solid var(--line); font-size:14px; font-family:var(--font-body);}
   .custom-row input:focus{outline:2px solid var(--magenta);}
 
+  .field-row{display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:13px; font-weight:600; color:var(--ink-soft);}
+  .field input, .field select{padding:12px 14px; border-radius:9px; border:1.5px solid var(--line); font-size:15px; font-family:var(--font-body); color:var(--ink);}
+  .field input:focus, .field select:focus{outline:2px solid var(--magenta); border-color:transparent;}
+  @media (min-width:560px){ .field-row.two-col{grid-template-columns:1fr 1fr;} }
+  .form-error{display:none; background:var(--magenta-tint); color:var(--magenta-dark); border-radius:10px; padding:12px 14px; font-size:13.5px; margin-top:14px;}
+  .freq-toggle{display:flex; border:1.5px solid var(--line); border-radius:999px; padding:4px; margin:16px 0 4px; max-width:260px;}
+  .freq-toggle button{flex:1; border:none; background:none; padding:9px 12px; border-radius:999px; font-weight:600; font-size:13.5px; cursor:pointer; color:var(--ink-soft);}
+  .freq-toggle button.active{background:var(--navy); color:#fff;}
+
   .give-options{display:grid; grid-template-columns:1fr; gap:16px; margin-top:32px;}
   .give-option{border:1px solid var(--line); border-radius:var(--radius); padding:20px; text-align:center;}
   .give-option h3{font-size:16px;}
@@ -98,6 +109,51 @@
 
 <div class="wrap">
 
+  <div class="panel" id="donorInfo">
+    <h2>Your information</h2>
+    <p>We need this to send your tax receipt and keep you posted on where your gift goes.</p>
+    <div class="field-row two-col">
+      <div class="field">
+        <label for="donorName">Full name</label>
+        <input type="text" id="donorName" required>
+      </div>
+      <div class="field">
+        <label for="donorPhone">Phone</label>
+        <input type="tel" id="donorPhone" required>
+      </div>
+    </div>
+    <div class="field-row two-col">
+      <div class="field">
+        <label for="donorCounty">County</label>
+        <input type="text" id="donorCounty" required>
+      </div>
+      <div class="field">
+        <label for="donorState">State</label>
+        <select id="donorState" required>
+          <option value="" disabled selected>Select state</option>
+          <option>AL</option><option>AK</option><option>AZ</option><option>AR</option><option>CA</option>
+          <option>CO</option><option>CT</option><option>DE</option><option>DC</option><option>FL</option>
+          <option>GA</option><option>HI</option><option>ID</option><option>IL</option><option>IN</option>
+          <option>IA</option><option>KS</option><option>KY</option><option>LA</option><option>ME</option>
+          <option>MD</option><option>MA</option><option>MI</option><option>MN</option><option>MS</option>
+          <option>MO</option><option>MT</option><option>NE</option><option>NV</option><option>NH</option>
+          <option>NJ</option><option>NM</option><option>NY</option><option>NC</option><option>ND</option>
+          <option>OH</option><option>OK</option><option>OR</option><option>PA</option><option>RI</option>
+          <option>SC</option><option>SD</option><option>TN</option><option>TX</option><option>UT</option>
+          <option>VT</option><option>VA</option><option>WA</option><option>WV</option><option>WI</option>
+          <option>WY</option><option>Other / Outside US</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="donorEmail">Email</label>
+        <input type="email" id="donorEmail" required>
+      </div>
+    </div>
+    <p class="form-error" id="donorFormError">Please fill in your full name, county, state, phone, and email before giving.</p>
+  </div>
+
   <div class="panel" id="onetime">
     <h2>One-time gift</h2>
     <p>Fund art supplies, a season of STEM kits, or a family's Thanksgiving dinner.</p>
@@ -122,13 +178,23 @@
   <div class="panel" id="monthly">
     <h2>Become a sustaining donor</h2>
     <p>Recurring gifts let us plan programs year-round instead of drive to drive.</p>
-    <div class="amount-grid">
+    <div class="freq-toggle" id="freqToggle">
+      <button type="button" class="active" data-freq="monthly">Monthly</button>
+      <button type="button" data-freq="annual">Annual</button>
+    </div>
+    <div class="amount-grid" id="monthlyAmounts">
       <button class="amount-btn" data-amt="15">$15/mo</button>
       <button class="amount-btn selected" data-amt="25">$25/mo</button>
       <button class="amount-btn" data-amt="50">$50/mo</button>
     </div>
-    <!-- TODO: point this at a Square Checkout Link (Frequency: recurring) for the matching monthly amount -->
-    <a href="#" class="btn btn-primary" style="margin-top:16px;">Give $25 every month</a>
+    <div class="amount-grid" id="annualAmounts" style="display:none;">
+      <button class="amount-btn" data-amt="180">$180/yr</button>
+      <button class="amount-btn selected" data-amt="300">$300/yr</button>
+      <button class="amount-btn" data-amt="600">$600/yr</button>
+    </div>
+    <!-- TODO: point this at a Square Checkout Link — monthly amounts need Frequency: recurring monthly,
+         annual amounts need Frequency: recurring yearly. That's two separate sets of Square links. -->
+    <a href="#" class="btn btn-primary" style="margin-top:16px;" id="recurringBtn">Give $25 every month</a>
   </div>
 
   <div class="panel">
@@ -150,12 +216,48 @@
 </footer>
 
 <script>
-  function wireGroup(panelId, onChange){
-    var panel = document.getElementById(panelId);
-    var buttons = panel.querySelectorAll('.amount-btn');
+  // ---------------------------------------------------------------------
+  // Paste your deployed Google Apps Script Web App URL here once you have
+  // it (Google Sheet > Extensions > Apps Script > paste the script from
+  // the automation blueprint > Deploy > Web app > copy the URL it gives you).
+  // This matches the same pattern used on the register/volunteer pages —
+  // one script, routed by "formType".
+  var GOOGLE_SHEETS_WEB_APP_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+  function sendToSheet(payload){
+    if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) {
+      console.warn('Google Sheets URL not set yet — form data is not being saved anywhere.');
+      return;
+    }
+    fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+      method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(payload)
+    }).catch(function(err){ console.warn('Sheet submission failed:', err); });
+  }
+
+  function getDonorInfo(){
+    return {
+      name: document.getElementById('donorName').value.trim(),
+      county: document.getElementById('donorCounty').value.trim(),
+      state: document.getElementById('donorState').value,
+      phone: document.getElementById('donorPhone').value.trim(),
+      email: document.getElementById('donorEmail').value.trim()
+    };
+  }
+  function donorInfoValid(info){
+    return !!(info.name && info.county && info.state && info.phone && info.email);
+  }
+  function flashDonorError(){
+    document.getElementById('donorFormError').style.display = 'block';
+    document.getElementById('donorInfo').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function wireGroup(containerId, onChange){
+    var container = document.getElementById(containerId);
+    var buttons = container.querySelectorAll('.amount-btn');
     buttons.forEach(function(btn){
       btn.addEventListener('click', function(){
-        buttons.forEach(function(b){ b.classList.remove('selected'); });
+        btn.closest('.amount-grid').querySelectorAll('.amount-btn').forEach(function(b){ b.classList.remove('selected'); });
         btn.classList.add('selected');
         onChange(btn.dataset.amt, btn);
       });
@@ -191,10 +293,59 @@
     document.getElementById('onetimeBtn').textContent = v ? 'Give ' + v + ' now' : 'Give now';
   });
 
-  wireGroup('monthly', function(amt, btn){
-    var section = document.getElementById('monthly');
-    var giveBtn = section.querySelector('.btn-primary');
-    giveBtn.textContent = 'Give $' + amt + ' every month';
+  document.getElementById('onetimeBtn').addEventListener('click', function(e){
+    e.preventDefault();
+    var info = getDonorInfo();
+    if(!donorInfoValid(info)){ flashDonorError(); return; }
+    var selected = document.querySelector('#onetime .amount-btn.selected');
+    var amt = selected ? selected.dataset.amt : '';
+    if(amt === '0'){ amt = document.getElementById('customAmt').value; }
+    var payload = {formType:'Donation', frequency:'one-time', amount:amt};
+    for (var k in info) { payload[k] = info[k]; }
+    sendToSheet(payload);
+    // TODO: once the Square Checkout Link is set, redirect here instead of alerting.
+    alert('Thanks! Checkout isn\u2019t connected yet on this page \u2014 email paint4peacecv@gmail.com to complete your gift for now.');
+  });
+
+  // Recurring: Monthly / Annual toggle
+  var recurringFreq = 'monthly';
+  var recurringWords = {monthly:'every month', annual:'every year'};
+
+  document.querySelectorAll('#freqToggle button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#freqToggle button').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      recurringFreq = btn.dataset.freq;
+      var monthlyGrid = document.getElementById('monthlyAmounts');
+      var annualGrid = document.getElementById('annualAmounts');
+      monthlyGrid.style.display = recurringFreq === 'monthly' ? 'grid' : 'none';
+      annualGrid.style.display = recurringFreq === 'annual' ? 'grid' : 'none';
+      var activeGrid = recurringFreq === 'monthly' ? monthlyGrid : annualGrid;
+      var sel = activeGrid.querySelector('.amount-btn.selected') || activeGrid.querySelector('.amount-btn');
+      if (sel) {
+        document.getElementById('recurringBtn').textContent = 'Give $' + sel.dataset.amt + ' ' + recurringWords[recurringFreq];
+      }
+    });
+  });
+
+  wireGroup('monthlyAmounts', function(amt){
+    document.getElementById('recurringBtn').textContent = 'Give $' + amt + ' ' + recurringWords[recurringFreq];
+  });
+  wireGroup('annualAmounts', function(amt){
+    document.getElementById('recurringBtn').textContent = 'Give $' + amt + ' ' + recurringWords[recurringFreq];
+  });
+
+  document.getElementById('recurringBtn').addEventListener('click', function(e){
+    e.preventDefault();
+    var info = getDonorInfo();
+    if(!donorInfoValid(info)){ flashDonorError(); return; }
+    var activeGrid = recurringFreq === 'monthly' ? document.getElementById('monthlyAmounts') : document.getElementById('annualAmounts');
+    var selected = activeGrid.querySelector('.amount-btn.selected');
+    var amt = selected ? selected.dataset.amt : '';
+    var payload = {formType:'Donation', frequency:recurringFreq, amount:amt};
+    for (var k in info) { payload[k] = info[k]; }
+    sendToSheet(payload);
+    alert('Thanks! Checkout isn\u2019t connected yet on this page \u2014 email paint4peacecv@gmail.com to complete your gift for now.');
   });
 </script>
 
