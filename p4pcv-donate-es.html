@@ -54,35 +54,6 @@
   .panel h2{font-size:20px;}
   .panel > p{color:var(--ink-soft); font-size:14.5px; margin-top:6px;}
 
-  .toggle{display:flex; border:1.5px solid var(--line); border-radius:999px; padding:4px; margin:20px 0; max-width:280px;}
-  .toggle button{flex:1; border:none; background:none; padding:9px 12px; border-radius:999px; font-weight:600; font-size:13.5px; cursor:pointer; color:var(--ink-soft);}
-  .toggle button.active{background:var(--navy); color:#fff;}
-
-  .amount-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0;}
-  .amount-btn{border:1.5px solid var(--line); border-radius:10px; padding:16px 8px; text-align:center; font-weight:600; font-size:15px; background:#fff; cursor:pointer;}
-  .amount-btn.selected{border-color:var(--magenta); background:var(--magenta-tint); color:var(--magenta-dark);}
-  .amount-impact{font-size:12px; color:var(--ink-mute); margin-top:16px; min-height:16px;}
-  .custom-row{display:flex; gap:8px; margin-top:10px;}
-  .custom-row input{flex:1; padding:12px 14px; border-radius:10px; border:1.5px solid var(--line); font-size:14px; font-family:var(--font-body);}
-  .custom-row input:focus{outline:2px solid var(--magenta);}
-
-  .field-row{display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;}
-  .field{display:flex; flex-direction:column; gap:6px;}
-  .field label{font-size:13px; font-weight:600; color:var(--ink-soft);}
-  .field input, .field select{padding:12px 14px; border-radius:9px; border:1.5px solid var(--line); font-size:15px; font-family:var(--font-body); color:var(--ink);}
-  .field input:focus, .field select:focus{outline:2px solid var(--magenta); border-color:transparent;}
-  @media (min-width:560px){ .field-row.two-col{grid-template-columns:1fr 1fr;} }
-  .form-error{display:none; background:var(--magenta-tint); color:var(--magenta-dark); border-radius:10px; padding:12px 14px; font-size:13.5px; margin-top:14px;}
-  .freq-toggle{display:flex; border:1.5px solid var(--line); border-radius:999px; padding:4px; margin:16px 0 4px; max-width:260px;}
-  .freq-toggle button{flex:1; border:none; background:none; padding:9px 12px; border-radius:999px; font-weight:600; font-size:13.5px; cursor:pointer; color:var(--ink-soft);}
-  .freq-toggle button.active{background:var(--navy); color:#fff;}
-
-  .give-options{display:grid; grid-template-columns:1fr; gap:16px; margin-top:32px;}
-  .give-option{border:1px solid var(--line); border-radius:var(--radius); padding:20px; text-align:center;}
-  .give-option h3{font-size:16px;}
-  .give-option p{font-size:13.5px; color:var(--ink-soft); margin:8px 0 14px;}
-  @media (min-width:640px){ .give-options{grid-template-columns:repeat(2,1fr);} }
-
   .trust-row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:32px; font-size:12px; color:var(--ink-mute);}
   .trust-badge{border:1px solid var(--line); border-radius:8px; padding:6px 12px;}
 
@@ -107,92 +78,14 @@
 
 <div class="wrap">
 
-  <div class="panel" id="donorInfo">
-    <h2>Tu información</h2>
-    <p>La necesitamos para enviarte tu recibo fiscal y mantenerte al tanto de a dónde va tu donación.</p>
-    <div class="field-row two-col">
-      <div class="field">
-        <label for="donorName">Nombre completo</label>
-        <input type="text" id="donorName" required>
-      </div>
-      <div class="field">
-        <label for="donorPhone">Teléfono</label>
-        <input type="tel" id="donorPhone" required>
-      </div>
-    </div>
-    <div class="field-row two-col">
-      <div class="field">
-        <label for="donorCounty">Condado</label>
-        <input type="text" id="donorCounty" required>
-      </div>
-      <div class="field">
-        <label for="donorState">Estado</label>
-        <select id="donorState" required>
-          <option value="" disabled selected>Selecciona un estado</option>
-          <option>AL</option><option>AK</option><option>AZ</option><option>AR</option><option>CA</option>
-          <option>CO</option><option>CT</option><option>DE</option><option>DC</option><option>FL</option>
-          <option>GA</option><option>HI</option><option>ID</option><option>IL</option><option>IN</option>
-          <option>IA</option><option>KS</option><option>KY</option><option>LA</option><option>ME</option>
-          <option>MD</option><option>MA</option><option>MI</option><option>MN</option><option>MS</option>
-          <option>MO</option><option>MT</option><option>NE</option><option>NV</option><option>NH</option>
-          <option>NJ</option><option>NM</option><option>NY</option><option>NC</option><option>ND</option>
-          <option>OH</option><option>OK</option><option>OR</option><option>PA</option><option>RI</option>
-          <option>SC</option><option>SD</option><option>TN</option><option>TX</option><option>UT</option>
-          <option>VT</option><option>VA</option><option>WA</option><option>WV</option><option>WI</option>
-          <option>WY</option><option>Otro / Fuera de EE. UU.</option>
-        </select>
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="donorEmail">Correo electrónico</label>
-        <input type="email" id="donorEmail" required>
-      </div>
-    </div>
-    <p class="form-error" id="donorFormError">Por favor completa tu nombre, condado, estado, teléfono y correo antes de donar.</p>
-  </div>
-
-  <div class="panel" id="onetime">
-    <h2>Donación única</h2>
-    <p>Financia materiales de arte, una temporada de kits STEM, o la cena de Acción de Gracias de una familia.</p>
-    <div class="amount-grid">
-      <button class="amount-btn" data-amt="25">$25</button>
-      <button class="amount-btn selected" data-amt="50">$50</button>
-      <button class="amount-btn" data-amt="100">$100</button>
-      <button class="amount-btn" data-amt="250">$250</button>
-      <button class="amount-btn" data-amt="500">$500</button>
-      <button class="amount-btn" data-amt="0">Otro</button>
-    </div>
-    <div class="custom-row" id="customRow" style="display:none;">
-      <input type="number" min="1" placeholder="Ingresa un monto" aria-label="Monto de donación personalizado" id="customAmt">
-    </div>
-    <p class="amount-impact" id="impactLine">$50 cubre un juego completo de pinturas para una clase.</p>
-    <!-- TODO: point this at a Square Checkout Link (Frequency: one-time). Square is natively connectable
-         in GHL under Settings > Payments > Integrations, but coverage varies by product area inside GHL —
-         confirm it's available for whichever checkout type (order form vs. payment link) you end up using. -->
-    <a href="#" class="btn btn-primary" style="margin-top:16px;" id="onetimeBtn">Donar $50 ahora</a>
-  </div>
-
-  <div class="panel" id="monthly">
-    <h2>Conviértete en donante sostenido</h2>
-    <p>Las donaciones recurrentes nos permiten planificar programas todo el año, en lugar de depender de campaña en campaña.</p>
-    <div class="freq-toggle" id="freqToggle">
-      <button type="button" class="active" data-freq="monthly">Mensual</button>
-      <button type="button" data-freq="annual">Anual</button>
-    </div>
-    <div class="amount-grid" id="monthlyAmounts">
-      <button class="amount-btn" data-amt="15">$15/mes</button>
-      <button class="amount-btn selected" data-amt="25">$25/mes</button>
-      <button class="amount-btn" data-amt="50">$50/mes</button>
-    </div>
-    <div class="amount-grid" id="annualAmounts" style="display:none;">
-      <button class="amount-btn" data-amt="180">$180/año</button>
-      <button class="amount-btn selected" data-amt="300">$300/año</button>
-      <button class="amount-btn" data-amt="600">$600/año</button>
-    </div>
-    <!-- TODO: point this at a Square Checkout Link — monthly amounts need Frequency: recurring monthly,
-         annual amounts need Frequency: recurring yearly. That's two separate sets of Square links. -->
-    <a href="#" class="btn btn-primary" style="margin-top:16px;" id="recurringBtn">Donar $25 cada mes</a>
+  <div class="panel" id="donate">
+    <h2>Haz una donación</h2>
+    <p>Cada donación financia programas reales para los niños de East Harlem. Esto es lo que hacen algunos montos comunes:</p>
+    <p style="margin-top:14px;"><strong>$25</strong> &mdash; Materiales de arte</p>
+    <p style="margin-top:6px;"><strong>$50</strong> &mdash; Materiales del programa</p>
+    <p style="margin-top:6px;"><strong>$100</strong> &mdash; Apoyo a actividades juveniles</p>
+    <p style="margin-top:14px; color:var(--ink-soft); font-size:14px;">Elige tu propio monto &mdash; único o mensual &mdash; en el siguiente paso.</p>
+    <button type="button" class="btn btn-primary" style="margin-top:20px;" zeffy-form-link="https://www.zeffy.com/embed/donation-form/support-in-creating-futures?modal=true">Donar ahora</button>
   </div>
 
   <div class="panel">
@@ -202,7 +95,7 @@
   </div>
 
   <div class="trust-row">
-    <span class="trust-badge">Pagos protegidos por Square</span>
+    <span class="trust-badge">Pago seguro con Zeffy</span>
     <span class="trust-badge">83% se destina directamente a los programas</span>
     <span class="trust-badge">Deducible de impuestos — recibo enviado al instante por correo</span>
   </div>
@@ -210,136 +103,10 @@
 </div>
 
 <footer>
-  <div class="wrap">Paint 4 Peace Children's Village · 2037 Third Avenue, New York, NY 10029 · (646) 332-8236</div>
+  <div class="wrap">Paint 4 Peace Children's Village · 2037 Third Avenue, New York, NY 10029 · (646) 332-8236 · Jamol: (646) 656-4845</div>
 </footer>
 
-<script>
-  var GOOGLE_SHEETS_WEB_APP_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
-
-  function sendToSheet(payload){
-    if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) {
-      console.warn('Google Sheets URL not set yet — form data is not being saved anywhere.');
-      return;
-    }
-    fetch(GOOGLE_SHEETS_WEB_APP_URL, {
-      method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'},
-      body: JSON.stringify(payload)
-    }).catch(function(err){ console.warn('Sheet submission failed:', err); });
-  }
-
-  function getDonorInfo(){
-    return {
-      name: document.getElementById('donorName').value.trim(),
-      county: document.getElementById('donorCounty').value.trim(),
-      state: document.getElementById('donorState').value,
-      phone: document.getElementById('donorPhone').value.trim(),
-      email: document.getElementById('donorEmail').value.trim()
-    };
-  }
-  function donorInfoValid(info){
-    return !!(info.name && info.county && info.state && info.phone && info.email);
-  }
-  function flashDonorError(){
-    document.getElementById('donorFormError').style.display = 'block';
-    document.getElementById('donorInfo').scrollIntoView({behavior:'smooth', block:'center'});
-  }
-
-  function wireGroup(containerId, onChange){
-    var container = document.getElementById(containerId);
-    var buttons = container.querySelectorAll('.amount-btn');
-    buttons.forEach(function(btn){
-      btn.addEventListener('click', function(){
-        btn.closest('.amount-grid').querySelectorAll('.amount-btn').forEach(function(b){ b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        onChange(btn.dataset.amt, btn);
-      });
-    });
-  }
-
-  var impacts = {
-    '25':'$25 provee una semana de materiales de arte para un niño.',
-    '50':'$50 cubre un juego completo de pinturas para una clase.',
-    '100':'$100 financia el kit STEM de un niño por un semestre completo.',
-    '250':'$250 patrocina a una familia a través de nuestro programa de Cena de Acción de Gracias.',
-    '500':'$500 ayuda a realizar un taller completo de sábado para 15 niños.',
-    '0':'Cada monto financia un programa real de los mencionados arriba.'
-  };
-
-  wireGroup('onetime', function(amt, btn){
-    var customRow = document.getElementById('customRow');
-    var onetimeBtn = document.getElementById('onetimeBtn');
-    var impactLine = document.getElementById('impactLine');
-    if(amt === '0'){
-      customRow.style.display = 'flex';
-      impactLine.textContent = impacts['0'];
-      onetimeBtn.textContent = 'Donar ahora';
-    } else {
-      customRow.style.display = 'none';
-      impactLine.textContent = impacts[amt] || '';
-      onetimeBtn.textContent = 'Donar $' + amt + ' ahora';
-    }
-  });
-
-  document.getElementById('customAmt').addEventListener('input', function(){
-    var v = this.value ? '$' + this.value : '';
-    document.getElementById('onetimeBtn').textContent = v ? 'Donar ' + v + ' ahora' : 'Donar ahora';
-  });
-
-  document.getElementById('onetimeBtn').addEventListener('click', function(e){
-    e.preventDefault();
-    var info = getDonorInfo();
-    if(!donorInfoValid(info)){ flashDonorError(); return; }
-    var selected = document.querySelector('#onetime .amount-btn.selected');
-    var amt = selected ? selected.dataset.amt : '';
-    if(amt === '0'){ amt = document.getElementById('customAmt').value; }
-    var payload = {formType:'Donation', frequency:'one-time', amount:amt};
-    for (var k in info) { payload[k] = info[k]; }
-    sendToSheet(payload);
-    // TODO: once the Square Checkout Link is set, redirect here instead of alerting.
-    alert('¡Gracias! El pago aún no está conectado en esta página \u2014 escribe a paint4peacecv@gmail.com para completar tu donación por ahora.');
-  });
-
-  // Recurrente: alternador Mensual / Anual
-  var recurringFreq = 'monthly';
-  var recurringWords = {monthly:'cada mes', annual:'cada año'};
-
-  document.querySelectorAll('#freqToggle button').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('#freqToggle button').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-      recurringFreq = btn.dataset.freq;
-      var monthlyGrid = document.getElementById('monthlyAmounts');
-      var annualGrid = document.getElementById('annualAmounts');
-      monthlyGrid.style.display = recurringFreq === 'monthly' ? 'grid' : 'none';
-      annualGrid.style.display = recurringFreq === 'annual' ? 'grid' : 'none';
-      var activeGrid = recurringFreq === 'monthly' ? monthlyGrid : annualGrid;
-      var sel = activeGrid.querySelector('.amount-btn.selected') || activeGrid.querySelector('.amount-btn');
-      if (sel) {
-        document.getElementById('recurringBtn').textContent = 'Donar $' + sel.dataset.amt + ' ' + recurringWords[recurringFreq];
-      }
-    });
-  });
-
-  wireGroup('monthlyAmounts', function(amt){
-    document.getElementById('recurringBtn').textContent = 'Donar $' + amt + ' ' + recurringWords[recurringFreq];
-  });
-  wireGroup('annualAmounts', function(amt){
-    document.getElementById('recurringBtn').textContent = 'Donar $' + amt + ' ' + recurringWords[recurringFreq];
-  });
-
-  document.getElementById('recurringBtn').addEventListener('click', function(e){
-    e.preventDefault();
-    var info = getDonorInfo();
-    if(!donorInfoValid(info)){ flashDonorError(); return; }
-    var activeGrid = recurringFreq === 'monthly' ? document.getElementById('monthlyAmounts') : document.getElementById('annualAmounts');
-    var selected = activeGrid.querySelector('.amount-btn.selected');
-    var amt = selected ? selected.dataset.amt : '';
-    var payload = {formType:'Donation', frequency:recurringFreq, amount:amt};
-    for (var k in info) { payload[k] = info[k]; }
-    sendToSheet(payload);
-    alert('¡Gracias! El pago aún no está conectado en esta página \u2014 escribe a paint4peacecv@gmail.com para completar tu donación por ahora.');
-  });
-</script>
+<script src="https://zeffy-scripts.s3.ca-central-1.amazonaws.com/embed-form-script.min.js"></script>
 
 </body>
 </html>
