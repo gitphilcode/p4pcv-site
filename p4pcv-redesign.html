@@ -281,9 +281,8 @@
   .give-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px 22px; display:flex; flex-direction:column;}
   .give-card h3{font-size:17px; margin-top:8px;}
   .give-card p{margin-top:8px; color:var(--ink-soft); font-size:14px; flex:1;}
-  .amount-chips{display:flex; gap:8px; flex-wrap:wrap; margin:16px 0;}
-  .chip{border:1.5px solid var(--line); border-radius:999px; padding:8px 16px; font-size:13.5px; font-weight:600; cursor:pointer; background:#fff;}
-  .chip.selected, .chip:hover{border-color:var(--magenta); background:var(--magenta-tint); color:var(--magenta-dark);}
+  .give-amounts p{margin-top:6px; font-size:14px;}
+  .give-amounts p:first-child{margin-top:16px;}
   @media (min-width:700px){ .give-grid{grid-template-columns:1fr 1fr;} }
   @media (min-width:1000px){ .give-grid{grid-template-columns:repeat(3,1fr);} }
 
@@ -406,7 +405,6 @@
       <a href="#involved">Get Involved</a>
       <a href="p4pcv-events.html">Events</a>
       <a href="p4pcv-gallery.html">Gallery</a>
-      <a href="p4pcv-signin.html">Sign In</a>
     </nav>
     <div class="nav-actions">
       <button type="button" class="btn btn-primary btn-sm" zeffy-form-link="https://www.zeffy.com/embed/donation-form/support-in-creating-futures?modal=true">Donate</button>
@@ -420,7 +418,6 @@
     <a href="#involved">Get Involved</a>
     <a href="p4pcv-events.html">Events</a>
     <a href="p4pcv-gallery.html">Gallery</a>
-    <a href="p4pcv-signin.html">Sign In</a>
     <a href="#" zeffy-form-link="https://www.zeffy.com/embed/donation-form/support-in-creating-futures?modal=true">Donate</a>
   </div>
 </header>
@@ -691,11 +688,10 @@
           <div class="eyebrow" style="color:var(--navy)">One-time gift</div>
           <h3>Make a gift today</h3>
           <p>Fund art supplies, a season of STEM kits, or a family's Thanksgiving dinner.</p>
-          <div class="amount-chips">
-            <button class="chip selected" type="button">$25</button>
-            <button class="chip" type="button">$50</button>
-            <button class="chip" type="button">$100</button>
-            <button class="chip" type="button">Other</button>
+          <div class="give-amounts">
+            <p><strong>$25</strong> &mdash; Art supplies</p>
+            <p><strong>$50</strong> &mdash; Program materials</p>
+            <p><strong>$100</strong> &mdash; Youth activity support</p>
           </div>
           <button type="button" class="btn btn-primary btn-sm" style="margin-top:auto;" zeffy-form-link="https://www.zeffy.com/embed/donation-form/support-in-creating-futures?modal=true">Donate now</button>
         </div>
@@ -712,6 +708,7 @@
           <a href="#care-corporate" class="btn btn-ghost btn-sm" style="margin-top:auto;">Explore partnership</a>
         </div>
       </div>
+      <p class="stats-note">Quick note: our checkout (Zeffy) relies on optional tips to stay free for nonprofits like us — you may see a tip prompt there, and it's completely optional. Zeffy will show your confirmation and email your receipt right there in the popup, but the popup won't close on its own afterward — just refresh the page once you've seen that confirmation and you're all set.</p>
     </div>
   </section>
 
@@ -861,16 +858,6 @@
     }).catch(function(err){ console.warn('Sheet submission failed:', err); });
   }
 
-  document.querySelectorAll('.amount-chips').forEach(function(group){
-    group.addEventListener('click', function(e){
-      var chip = e.target.closest('.chip');
-      if(!chip) return;
-      group.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('selected'); });
-      chip.classList.add('selected');
-    });
-  });
-
-  // Newsletter forms (hero + footer) — both share this handler via their data-source attribute.
   document.querySelectorAll('#heroNewsletterForm, #footerNewsletterForm').forEach(function(form){
     form.addEventListener('submit', function(e){
       e.preventDefault();
