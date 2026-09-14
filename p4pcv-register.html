@@ -137,6 +137,12 @@
           <input type="email" id="parentEmail" required>
         </div>
       </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="homeAddress">Home address (optional)</label>
+          <input type="text" id="homeAddress" placeholder="Street, city, ZIP">
+        </div>
+      </div>
 
       <div class="field-row">
         <div class="field">
@@ -149,6 +155,10 @@
       <div class="consent-row">
         <input type="checkbox" id="regConsent" required>
         <label for="regConsent">I'm this child's parent or legal guardian, and I'm registering interest on their behalf.</label>
+      </div>
+      <div class="consent-row">
+        <input type="checkbox" id="photoConsent">
+        <label for="photoConsent">I give permission for Paint 4 Peace to photograph and video my child, and to use those photos and videos to promote the organization (website, social media, print materials, etc.). This is optional and won't affect enrollment.</label>
       </div>
 
       <!-- Posts to your Google Sheet's "Registration" tab via the same Apps Script as the newsletter
@@ -207,7 +217,9 @@
     var parentPhone = document.getElementById('parentPhone').value.trim();
     var parentEmail = document.getElementById('parentEmail').value.trim();
     var notes = document.getElementById('notes').value.trim();
+    var address = document.getElementById('homeAddress').value.trim();
     var consent = document.getElementById('regConsent').checked;
+    var photoConsent = document.getElementById('photoConsent').checked;
 
     if (!childName || !childAge || !parentName || !parentPhone || !parentEmail || selectedPrograms.length === 0 || !consent) {
       errorBox.style.display = 'block';
@@ -219,7 +231,7 @@
       childName: childName, childAge: childAge,
       programs: selectedPrograms.join(', '),
       parentName: parentName, parentPhone: parentPhone, parentEmail: parentEmail,
-      notes: notes, consent: consent
+      notes: notes, address: address, consent: consent, photoConsent: photoConsent
     });
 
     successBox.style.display = 'block';

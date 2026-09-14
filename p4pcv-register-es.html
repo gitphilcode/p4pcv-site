@@ -137,6 +137,12 @@
           <input type="email" id="parentEmail" required>
         </div>
       </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="homeAddress">Dirección de casa (opcional)</label>
+          <input type="text" id="homeAddress" placeholder="Calle, ciudad, código postal">
+        </div>
+      </div>
 
       <div class="field-row">
         <div class="field">
@@ -149,6 +155,10 @@
       <div class="consent-row">
         <input type="checkbox" id="regConsent" required>
         <label for="regConsent">Soy el padre, madre o tutor(a) legal de este niño(a), y estoy registrando su interés en su nombre.</label>
+      </div>
+      <div class="consent-row">
+        <input type="checkbox" id="photoConsent">
+        <label for="photoConsent">Doy permiso para que Paint 4 Peace fotografíe y grabe en video a mi hijo(a), y use esas fotos y videos para promover la organización (sitio web, redes sociales, materiales impresos, etc.). Esto es opcional y no afecta la inscripción.</label>
       </div>
 
       <!-- Posts to your Google Sheet's "Registration" tab via the same Apps Script as the newsletter
@@ -207,7 +217,9 @@
     var parentPhone = document.getElementById('parentPhone').value.trim();
     var parentEmail = document.getElementById('parentEmail').value.trim();
     var notes = document.getElementById('notes').value.trim();
+    var address = document.getElementById('homeAddress').value.trim();
     var consent = document.getElementById('regConsent').checked;
+    var photoConsent = document.getElementById('photoConsent').checked;
 
     if (!childName || !childAge || !parentName || !parentPhone || !parentEmail || selectedPrograms.length === 0 || !consent) {
       errorBox.style.display = 'block';
@@ -219,7 +231,7 @@
       childName: childName, childAge: childAge,
       programs: selectedPrograms.join(', '),
       parentName: parentName, parentPhone: parentPhone, parentEmail: parentEmail,
-      notes: notes, consent: consent
+      notes: notes, address: address, consent: consent, photoConsent: photoConsent
     });
 
     successBox.style.display = 'block';
