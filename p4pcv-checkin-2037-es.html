@@ -91,7 +91,13 @@
 <div class="wrap">
   <form id="signinForm">
     <div class="panel">
-      <h2>¿Quién está entrando?</h2>
+      <h2 id="formHeading">¿Quién está entrando?</h2>
+
+      <div class="program-chips" id="modeToggle" style="margin-bottom:18px;">
+        <button type="button" class="program-chip selected" data-mode="Check-In">Entrando</button>
+        <button type="button" class="program-chip" data-mode="Check-Out">Saliendo</button>
+      </div>
+
       <div class="field-row">
         <div class="field">
           <label for="visitorName">Tu nombre completo</label>
@@ -99,33 +105,37 @@
         </div>
       </div>
 
-      <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">Estoy aquí como...</p>
-      <div class="program-chips" id="roleChips">
-        <button type="button" class="program-chip" data-role="Madre, padre o familiar">Madre, padre o familiar</button>
-        <button type="button" class="program-chip" data-role="Voluntario(a)">Voluntario(a)</button>
-        <button type="button" class="program-chip" data-role="Socio comunitario o corporativo">Socio comunitario o corporativo</button>
-        <button type="button" class="program-chip" data-role="Participante del programa">Participante del programa</button>
-        <button type="button" class="program-chip" data-role="Otro">Otro</button>
-      </div>
-
-      <div class="field-row">
-        <div class="field">
-          <label for="visitReason">Nombre del niño(a) o motivo de la visita (opcional)</label>
-          <input type="text" id="visitReason" placeholder="ej. recogiendo a Maya de la clase de arte">
+      <div id="checkinExtraFields">
+        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">Estoy aquí como...</p>
+        <div class="program-chips" id="roleChips">
+          <button type="button" class="program-chip" data-role="Madre, padre o familiar">Madre, padre o familiar</button>
+          <button type="button" class="program-chip" data-role="Voluntario(a)">Voluntario(a)</button>
+          <button type="button" class="program-chip" data-role="Socio comunitario o corporativo">Socio comunitario o corporativo</button>
+          <button type="button" class="program-chip" data-role="Participante del programa">Participante del programa</button>
+          <button type="button" class="program-chip" data-role="Otro">Otro</button>
         </div>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label for="visitorContact">Teléfono o correo electrónico (opcional)</label>
-          <input type="text" id="visitorContact" placeholder="Por si necesitamos contactarte hoy">
+
+        <div class="field-row">
+          <div class="field">
+            <label for="visitReason" id="visitReasonLabel">Motivo de la visita</label>
+            <input type="text" id="visitReason" placeholder="ej. recogiendo a Maya de la clase de arte" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="visitorContact" id="visitorContactLabel">Teléfono o correo electrónico</label>
+            <input type="text" id="visitorContact" placeholder="Número de teléfono o correo electrónico">
+          </div>
         </div>
       </div>
 
       <div class="form-error" id="formError">Por favor añade tu nombre para poder registrarte.</div>
 
       <!-- Publica en la misma hoja de Google que los formularios de registro/voluntariado, mediante
-           el mismo GOOGLE_SHEETS_WEB_APP_URL, etiquetado formType: 'Sign-In'. -->
-      <button type="submit" class="btn btn-primary">Registrar entrada</button>
+           el mismo GOOGLE_SHEETS_WEB_APP_URL, etiquetado formType: 'Sign-In'. El campo 'action'
+           (Check-In o Check-Out) indica al script si debe registrar una llegada nueva o buscar y
+           marcar la salida en el registro de entrada abierto correspondiente. -->
+      <button type="submit" class="btn btn-primary" id="submitBtn">Registrar entrada</button>
       <div class="form-msg" id="formSuccess">¡Registrado! Bienvenido(a) a la aldea.</div>
     </div>
   </form>
@@ -138,11 +148,29 @@
 </div>
 
 <footer>
-  <div class="wrap">Paint 4 Peace Children's Village · 2037 Third Avenue, New York, NY 10029 · (646) 656-4845 · (646) 332-8236</div>
+  <div class="wrap">Paint 4 Peace Children's Village · 2037 Third Avenue, New York, NY 10029 · (212) 256-0936 · (646) 656-4845</div>
 </footer>
 
 <script>
   var GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwkSZOtFmSeA4DtOBUOC0EHTbyu1SHLM4JdsCWWC5HQg0bwUvGFC33LRArdig4s4PkSUg/exec';
+
+  // Coordenadas de 2037 Third Avenue, New York, NY 10029 — usadas para confirmar
+  // que el registro realmente ocurre en el lugar (ver el manejador de envío abajo).
+  var VILLAGE_LAT = 40.7951202, VILLAGE_LNG = -73.9417455;
+  var VERIFIED_RADIUS_METERS = 80;   // ~1 cuadra de NYC — registro limpio, sin marca
+  var BLOCK_RADIUS_METERS = 400;     // ~5 cuadras de NYC — a esta distancia o más, se rechaza el envío por completo
+
+  function distanceMeters(lat1, lon1, lat2, lon2) {
+    var R = 6371000; // radio de la Tierra en metros
+    var toRad = function(d){ return d * Math.PI / 180; };
+    var dLat = toRad(lat2 - lat1);
+    var dLon = toRad(lon2 - lon1);
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
 
   function sendToSheet(payload){
     if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) {
@@ -156,18 +184,51 @@
   }
 
   var selectedRole = '';
-  document.querySelectorAll('.program-chip').forEach(function(chip){
+  var visitReasonLabel = document.getElementById('visitReasonLabel');
+  var visitReasonInput = document.getElementById('visitReason');
+  document.querySelectorAll('#roleChips .program-chip').forEach(function(chip){
     chip.addEventListener('click', function(){
-      document.querySelectorAll('.program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
       chip.classList.add('selected');
       selectedRole = chip.dataset.role;
+      if (selectedRole === 'Madre, padre o familiar') {
+        visitReasonLabel.textContent = 'Nombre del niño(a)';
+        visitReasonInput.placeholder = 'ej. Maya';
+      } else {
+        visitReasonLabel.textContent = 'Motivo de la visita';
+        visitReasonInput.placeholder = 'ej. recogiendo a Maya de la clase de arte';
+      }
+    });
+  });
+
+  var checkinMode = 'Check-In';
+  var alreadyRegistered = false; // se vuelve true si un QR escaneado encontró correctamente un registro conocido en Roster — ver la IIFE de búsqueda cerca del final de este script
+  var heading = document.getElementById('formHeading');
+  var extraFields = document.getElementById('checkinExtraFields');
+  var submitBtn = document.getElementById('submitBtn');
+  var successBox = document.getElementById('formSuccess');
+  document.querySelectorAll('#modeToggle .program-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#modeToggle .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      checkinMode = chip.dataset.mode;
+      if (checkinMode === 'Check-Out') {
+        heading.textContent = "¿Quién está saliendo?";
+        extraFields.style.display = 'none';
+        submitBtn.textContent = 'Registrar salida';
+        successBox.textContent = "¡Salida registrada! Gracias por venir.";
+      } else {
+        heading.textContent = "¿Quién está entrando?";
+        extraFields.style.display = '';
+        submitBtn.textContent = 'Registrar entrada';
+        successBox.textContent = "¡Registrado! Bienvenido(a) a la aldea.";
+      }
     });
   });
 
   document.getElementById('signinForm').addEventListener('submit', function(e){
     e.preventDefault();
     var errorBox = document.getElementById('formError');
-    var successBox = document.getElementById('formSuccess');
     errorBox.style.display = 'none';
     successBox.style.display = 'none';
 
@@ -176,24 +237,102 @@
     var visitorContact = document.getElementById('visitorContact').value.trim();
 
     if (!visitorName) {
+      errorBox.textContent = 'Por favor añade tu nombre para poder registrarte.';
       errorBox.style.display = 'block';
       return;
     }
 
-    sendToSheet({
-      formType: 'Sign-In',
-      visitorName: visitorName,
-      role: selectedRole,
-      reason: visitReason,
-      contact: visitorContact,
-      signedInAt: new Date().toLocaleString()
-    });
+    if (checkinMode === 'Check-In') {
+      if (!visitReason) {
+        errorBox.textContent = (selectedRole === 'Madre, padre o familiar')
+          ? 'Por favor añade el nombre de tu hijo(a).'
+          : 'Por favor añade un motivo para tu visita.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      if (!visitorContact && !alreadyRegistered) {
+        errorBox.textContent = 'Por favor añade un teléfono o correo electrónico para poder contactarte si es necesario.';
+        errorBox.style.display = 'block';
+        return;
+      }
+    }
 
-    successBox.style.display = 'block';
-    this.reset();
-    selectedRole = '';
-    document.querySelectorAll('.program-chip').forEach(function(c){ c.classList.remove('selected'); });
+    var thisForm = this;
+
+    function finishSubmit(locationStatus) {
+      sendToSheet({
+        formType: 'Sign-In',
+        action: checkinMode,
+        visitorName: visitorName,
+        role: selectedRole,
+        reason: visitReason,
+        contact: visitorContact,
+        signedInAt: new Date().toLocaleString(),
+        locationStatus: locationStatus
+      });
+
+      successBox.style.display = 'block';
+      thisForm.reset();
+      selectedRole = '';
+      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+    }
+
+    // Confirma que el teléfono que envía esto realmente está cerca de la aldea
+    // antes de permitirlo — de lo contrario alguien podría escanear su propia
+    // tarjeta (o simplemente abrir esta página) desde cualquier lugar y
+    // registrar una entrada sin haber venido. Si la ubicación no está
+    // disponible o se niega el permiso, esto deja pasar el envío de todos
+    // modos en lugar de bloquear a alguien que simplemente tiene la
+    // ubicación desactivada, pero lo marca para que el personal pueda ver
+    // qué registros fueron verificados por ubicación y cuáles no.
+    if (!navigator.geolocation) {
+      finishSubmit('No disponible (sin soporte del navegador)');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        var dist = distanceMeters(pos.coords.latitude, pos.coords.longitude, VILLAGE_LAT, VILLAGE_LNG);
+        if (dist <= VERIFIED_RADIUS_METERS) {
+          finishSubmit('Verificado (~' + Math.round(dist) + 'm de distancia)');
+        } else if (dist < BLOCK_RADIUS_METERS) {
+          finishSubmit('MARCADO — ~' + Math.round(dist) + 'm de distancia (fuera del rango normal)');
+        } else {
+          errorBox.textContent = 'Esto no parece venir desde la aldea — el registro solo funciona en el lugar. Si realmente estás aquí, intenta de nuevo, o pide al personal de recepción que te registre.';
+          errorBox.style.display = 'block';
+        }
+      },
+      function(err){
+        finishSubmit('No disponible (' + (err && err.message ? err.message : 'permiso denegado') + ')');
+      },
+      { timeout: 8000, maximumAge: 60000 }
+    );
   });
+
+  // Si esta página se abrió al escanear el código QR de una tarjeta de identificación
+  // (?id=P4P-0001), busca ese ID y llena automáticamente el nombre y el rol para que la
+  // persona no tenga que escribir nada. Colocado aquí, después de que todos los
+  // "listeners" de arriba ya están conectados, para que el clic simulado en el chip de
+  // rol funcione correctamente. Si la búsqueda falla por cualquier motivo — mala
+  // conexión, ID no reconocido, lo que sea — esto simplemente no hace nada y el
+  // formulario funciona exactamente como un registro manual normal. Nada aquí es
+  // necesario para que la página funcione.
+  (function(){
+    var scannedId = new URLSearchParams(window.location.search).get('id');
+    if (!scannedId || !GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) return;
+    fetch(GOOGLE_SHEETS_WEB_APP_URL + '?action=lookup&id=' + encodeURIComponent(scannedId))
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if (!data || !data.found) return;
+        document.getElementById('visitorName').value = data.name || '';
+        var participantChip = document.querySelector('#roleChips [data-role="Participante del programa"]');
+        if (participantChip) participantChip.click();
+        // Registro conocido en Roster — ya tenemos un teléfono/correo del padre en
+        // el archivo, así que no forzamos pedir esa info de nuevo tras un escaneo rápido.
+        alreadyRegistered = true;
+        document.getElementById('visitorContactLabel').textContent = 'Teléfono o correo electrónico (ya en el archivo — opcional)';
+      })
+      .catch(function(err){ console.warn('Falló la búsqueda por QR, usando entrada manual:', err); });
+  })();
 </script>
 
 </body>

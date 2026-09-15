@@ -91,7 +91,13 @@
 <div class="wrap">
   <form id="signinForm">
     <div class="panel">
-      <h2>Who's checking in?</h2>
+      <h2 id="formHeading">Who's checking in?</h2>
+
+      <div class="program-chips" id="modeToggle" style="margin-bottom:18px;">
+        <button type="button" class="program-chip selected" data-mode="Check-In">Checking in</button>
+        <button type="button" class="program-chip" data-mode="Check-Out">Checking out</button>
+      </div>
+
       <div class="field-row">
         <div class="field">
           <label for="visitorName">Your full name</label>
@@ -99,33 +105,37 @@
         </div>
       </div>
 
-      <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">I'm here as a...</p>
-      <div class="program-chips" id="roleChips">
-        <button type="button" class="program-chip" data-role="Parent or family member">Parent or family member</button>
-        <button type="button" class="program-chip" data-role="Volunteer">Volunteer</button>
-        <button type="button" class="program-chip" data-role="Community or corporate partner">Community or corporate partner</button>
-        <button type="button" class="program-chip" data-role="Program participant">Program participant</button>
-        <button type="button" class="program-chip" data-role="Other">Other</button>
-      </div>
-
-      <div class="field-row">
-        <div class="field">
-          <label for="visitReason">Child's name or reason for visit (optional)</label>
-          <input type="text" id="visitReason" placeholder="e.g. picking up Maya from Art Class">
+      <div id="checkinExtraFields">
+        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">I'm here as a...</p>
+        <div class="program-chips" id="roleChips">
+          <button type="button" class="program-chip" data-role="Parent or family member">Parent or family member</button>
+          <button type="button" class="program-chip" data-role="Volunteer">Volunteer</button>
+          <button type="button" class="program-chip" data-role="Community or corporate partner">Community or corporate partner</button>
+          <button type="button" class="program-chip" data-role="Program participant">Program participant</button>
+          <button type="button" class="program-chip" data-role="Other">Other</button>
         </div>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label for="visitorContact">Phone or email (optional)</label>
-          <input type="text" id="visitorContact" placeholder="In case we need to reach you today">
+
+        <div class="field-row">
+          <div class="field">
+            <label for="visitReason" id="visitReasonLabel">Reason for visit</label>
+            <input type="text" id="visitReason" placeholder="e.g. picking up Maya from Art Class" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="visitorContact" id="visitorContactLabel">Phone or email</label>
+            <input type="text" id="visitorContact" placeholder="Phone number or email address">
+          </div>
         </div>
       </div>
 
       <div class="form-error" id="formError">Please add your name so we can sign you in.</div>
 
       <!-- Posts to the same Google Sheet as the registration/volunteer forms via the shared
-           GOOGLE_SHEETS_WEB_APP_URL below, tagged formType: 'Sign-In'. -->
-      <button type="submit" class="btn btn-primary">Sign in</button>
+           GOOGLE_SHEETS_WEB_APP_URL below, tagged formType: 'Sign-In'. The 'action' field
+           (Check-In or Check-Out) tells the script whether to log a new arrival or find and
+           stamp the matching open check-in with a departure time. -->
+      <button type="submit" class="btn btn-primary" id="submitBtn">Sign in</button>
       <div class="form-msg" id="formSuccess">You're signed in — welcome to the village!</div>
     </div>
   </form>
@@ -138,11 +148,29 @@
 </div>
 
 <footer>
-  <div class="wrap">Paint 4 Peace Children's Village · 2037 Third Avenue, New York, NY 10029 · (646) 656-4845 · (646) 332-8236</div>
+  <div class="wrap">Paint 4 Peace Children's Village · 2037 Third Avenue, New York, NY 10029 · (212) 256-0936 · (646) 656-4845</div>
 </footer>
 
 <script>
   var GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwkSZOtFmSeA4DtOBUOC0EHTbyu1SHLM4JdsCWWC5HQg0bwUvGFC33LRArdig4s4PkSUg/exec';
+
+  // Coordinates for 2037 Third Avenue, New York, NY 10029 — used to confirm a
+  // check-in is actually happening on-site (see the submit handler below).
+  var VILLAGE_LAT = 40.7951202, VILLAGE_LNG = -73.9417455;
+  var VERIFIED_RADIUS_METERS = 80;   // ~1 NYC block — clean check-in, no flag
+  var BLOCK_RADIUS_METERS = 400;     // ~5 NYC blocks — at or beyond this, submission is refused entirely
+
+  function distanceMeters(lat1, lon1, lat2, lon2) {
+    var R = 6371000; // Earth's radius in meters
+    var toRad = function(d){ return d * Math.PI / 180; };
+    var dLat = toRad(lat2 - lat1);
+    var dLon = toRad(lon2 - lon1);
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
 
   function sendToSheet(payload){
     if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) {
@@ -156,18 +184,51 @@
   }
 
   var selectedRole = '';
-  document.querySelectorAll('.program-chip').forEach(function(chip){
+  var visitReasonLabel = document.getElementById('visitReasonLabel');
+  var visitReasonInput = document.getElementById('visitReason');
+  document.querySelectorAll('#roleChips .program-chip').forEach(function(chip){
     chip.addEventListener('click', function(){
-      document.querySelectorAll('.program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
       chip.classList.add('selected');
       selectedRole = chip.dataset.role;
+      if (selectedRole === 'Parent or family member') {
+        visitReasonLabel.textContent = "Child's name";
+        visitReasonInput.placeholder = 'e.g. Maya';
+      } else {
+        visitReasonLabel.textContent = 'Reason for visit';
+        visitReasonInput.placeholder = 'e.g. picking up Maya from Art Class';
+      }
+    });
+  });
+
+  var checkinMode = 'Check-In';
+  var alreadyRegistered = false; // set true if a scanned QR successfully looked up a known Roster entry — see the lookup IIFE near the end of this script
+  var heading = document.getElementById('formHeading');
+  var extraFields = document.getElementById('checkinExtraFields');
+  var submitBtn = document.getElementById('submitBtn');
+  var successBox = document.getElementById('formSuccess');
+  document.querySelectorAll('#modeToggle .program-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#modeToggle .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      checkinMode = chip.dataset.mode;
+      if (checkinMode === 'Check-Out') {
+        heading.textContent = "Who's checking out?";
+        extraFields.style.display = 'none';
+        submitBtn.textContent = 'Sign out';
+        successBox.textContent = "You're signed out — thanks for stopping by!";
+      } else {
+        heading.textContent = "Who's checking in?";
+        extraFields.style.display = '';
+        submitBtn.textContent = 'Sign in';
+        successBox.textContent = "You're signed in — welcome to the village!";
+      }
     });
   });
 
   document.getElementById('signinForm').addEventListener('submit', function(e){
     e.preventDefault();
     var errorBox = document.getElementById('formError');
-    var successBox = document.getElementById('formSuccess');
     errorBox.style.display = 'none';
     successBox.style.display = 'none';
 
@@ -176,24 +237,101 @@
     var visitorContact = document.getElementById('visitorContact').value.trim();
 
     if (!visitorName) {
+      errorBox.textContent = 'Please add your name so we can sign you in.';
       errorBox.style.display = 'block';
       return;
     }
 
-    sendToSheet({
-      formType: 'Sign-In',
-      visitorName: visitorName,
-      role: selectedRole,
-      reason: visitReason,
-      contact: visitorContact,
-      signedInAt: new Date().toLocaleString()
-    });
+    if (checkinMode === 'Check-In') {
+      if (!visitReason) {
+        errorBox.textContent = (selectedRole === 'Parent or family member')
+          ? "Please add your child's name."
+          : 'Please add a reason for your visit.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      if (!visitorContact && !alreadyRegistered) {
+        errorBox.textContent = 'Please add a phone number or email so we can reach you if needed.';
+        errorBox.style.display = 'block';
+        return;
+      }
+    }
 
-    successBox.style.display = 'block';
-    this.reset();
-    selectedRole = '';
-    document.querySelectorAll('.program-chip').forEach(function(c){ c.classList.remove('selected'); });
+    var thisForm = this;
+
+    function finishSubmit(locationStatus) {
+      sendToSheet({
+        formType: 'Sign-In',
+        action: checkinMode,
+        visitorName: visitorName,
+        role: selectedRole,
+        reason: visitReason,
+        contact: visitorContact,
+        signedInAt: new Date().toLocaleString(),
+        locationStatus: locationStatus
+      });
+
+      successBox.style.display = 'block';
+      thisForm.reset();
+      selectedRole = '';
+      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+    }
+
+    // Confirms the phone submitting this is actually near the village before
+    // letting it through — otherwise someone could scan their own card (or
+    // just open this page) from anywhere and log a check-in without ever
+    // visiting. If location is unavailable or denied, this lets the
+    // submission through anyway rather than blocking someone who simply has
+    // location services off, but flags it so staff can see which entries
+    // were location-verified and which weren't.
+    if (!navigator.geolocation) {
+      finishSubmit('Unavailable (no browser support)');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        var dist = distanceMeters(pos.coords.latitude, pos.coords.longitude, VILLAGE_LAT, VILLAGE_LNG);
+        if (dist <= VERIFIED_RADIUS_METERS) {
+          finishSubmit('Verified (~' + Math.round(dist) + 'm away)');
+        } else if (dist < BLOCK_RADIUS_METERS) {
+          finishSubmit('FLAGGED — ~' + Math.round(dist) + 'm away (outside normal range)');
+        } else {
+          errorBox.textContent = "This doesn't look like it's coming from the village — check-in only works on-site. If you're actually here, try again, or ask the front desk to sign you in.";
+          errorBox.style.display = 'block';
+        }
+      },
+      function(err){
+        finishSubmit('Unavailable (' + (err && err.message ? err.message : 'permission denied') + ')');
+      },
+      { timeout: 8000, maximumAge: 60000 }
+    );
   });
+
+  // If this page was opened from a scanned ID card QR code (?id=P4P-0001),
+  // look that ID up and pre-fill the name + role so the person doesn't have
+  // to type anything. Placed here, after every click listener above is
+  // already attached, so the simulated click on the role chip actually
+  // registers. If the lookup fails for any reason — bad connection,
+  // unrecognized ID, whatever — this just quietly does nothing and the form
+  // behaves exactly like a normal manual check-in. Nothing here is required
+  // for the page to work.
+  (function(){
+    var scannedId = new URLSearchParams(window.location.search).get('id');
+    if (!scannedId || !GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) return;
+    fetch(GOOGLE_SHEETS_WEB_APP_URL + '?action=lookup&id=' + encodeURIComponent(scannedId))
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if (!data || !data.found) return;
+        document.getElementById('visitorName').value = data.name || '';
+        var participantChip = document.querySelector('#roleChips [data-role="Program participant"]');
+        if (participantChip) participantChip.click();
+        // Known Roster entry — we already have a parent phone/email on file,
+        // so don't force asking for contact info again on top of a fast scan.
+        alreadyRegistered = true;
+        document.getElementById('visitorContactLabel').textContent = 'Phone or email (already on file — optional)';
+      })
+      .catch(function(err){ console.warn('QR lookup failed, falling back to manual entry:', err); });
+  })();
 </script>
 
 </body>
