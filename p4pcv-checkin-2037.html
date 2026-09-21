@@ -106,7 +106,13 @@
       </div>
 
       <div id="checkinExtraFields">
-        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">I'm here as a...</p>
+        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">What brings you in today?</p>
+        <div class="program-chips" id="visitTypeToggle" style="margin-bottom:18px;">
+          <button type="button" class="program-chip selected" data-visittype="Program/Family">Visiting for a child or program</button>
+          <button type="button" class="program-chip" data-visittype="Facility/Business">Delivery, meeting, or facility visit</button>
+        </div>
+
+        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;" id="roleChipsIntro">I'm here as a...</p>
         <div class="program-chips" id="roleChips">
           <button type="button" class="program-chip" data-role="Parent or family member">Parent or family member</button>
           <button type="button" class="program-chip" data-role="Volunteer">Volunteer</button>
@@ -118,7 +124,8 @@
         <div class="field-row">
           <div class="field">
             <label for="visitReason" id="visitReasonLabel">Reason for visit</label>
-            <input type="text" id="visitReason" placeholder="e.g. picking up Maya from Art Class" required>
+            <input type="text" id="visitReason" list="reasonSuggestions" placeholder="e.g. picking up Maya from Art Class" required>
+            <datalist id="reasonSuggestions"></datalist>
           </div>
         </div>
         <div class="field-row">
@@ -183,22 +190,137 @@
     }).catch(function(err){ console.warn('Sheet submission failed:', err); });
   }
 
+  // Two visit types share this one sign-in page (and one QR code at the front
+  // desk) rather than splitting into a separate page: "Program/Family" is the
+  // original child/volunteer/partner flow, "Facility/Business" is for
+  // deliveries, drop-offs, meetings, appointments, and equipment/facility use.
+  // Picking a visit type swaps which role chips are shown; both feed the same
+  // Sign-In sheet with an added Visit Type column so the two stay easy to
+  // filter apart later.
+  var FAMILY_ROLES = [
+    {role:'Parent or family member', label:'Parent or family member'},
+    {role:'Volunteer', label:'Volunteer'},
+    {role:'Community or corporate partner', label:'Community or corporate partner'},
+    {role:'Program participant', label:'Program participant'},
+    {role:'Other', label:'Other'}
+  ];
+  var BUSINESS_ROLES = [
+    {role:'Delivery or drop-off', label:'Delivery / drop-off'},
+    {role:'Meeting or appointment', label:'Meeting / appointment'},
+    {role:'Equipment or facility use', label:'Equipment / facility use'},
+    {role:'Vendor or contractor', label:'Vendor / contractor'},
+    {role:'Other', label:'Other'}
+  ];
+
+  var visitType = 'Program/Family';
   var selectedRole = '';
+  var roleChipsEl = document.getElementById('roleChips');
+  var roleChipsIntro = document.getElementById('roleChipsIntro');
   var visitReasonLabel = document.getElementById('visitReasonLabel');
   var visitReasonInput = document.getElementById('visitReason');
-  document.querySelectorAll('#roleChips .program-chip').forEach(function(chip){
-    chip.addEventListener('click', function(){
-      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
-      chip.classList.add('selected');
-      selectedRole = chip.dataset.role;
-      if (selectedRole === 'Parent or family member') {
-        visitReasonLabel.textContent = "Child's name";
-        visitReasonInput.placeholder = 'e.g. Maya';
-      } else {
-        visitReasonLabel.textContent = 'Reason for visit';
-        visitReasonInput.placeholder = 'e.g. picking up Maya from Art Class';
-      }
+  var reasonDatalist = document.getElementById('reasonSuggestions');
+
+  // The reason/details field stays a text input (not just chips) because what
+  // someone types here is specific to that one visit — a child's name, which
+  // meeting, what's being dropped off — that a fixed set of buttons can't
+  // cover. But it's wired as a combo-box (a text input paired with a
+  // <datalist>) so returning visitors get one-click options instead of
+  // retyping: generic suggestions per role below, plus — for "Parent or
+  // family member" — that family's own registered children, looked up the
+  // moment they type their name (see the blur listener further down). Typing
+  // something new always still works; the dropdown is a shortcut, not a limit.
+  var DEFAULT_REASON_SUGGESTIONS = {
+    'Volunteer': ['Art Class', 'Boot Camp', 'Recyclers', 'Tech Lab', 'Barber & Cosmetology Training', 'Podcasting Studio', 'Front desk', 'Event setup'],
+    'Community or corporate partner': ['Site visit', 'Partnership meeting', 'Donation drop-off', 'Tour'],
+    'Program participant': ['Art Class', 'Boot Camp', 'Recyclers', 'Tech Lab', 'Barber & Cosmetology Training', 'Podcasting Studio'],
+    'Delivery or drop-off': ['Art supplies delivery', 'Food or catering delivery', 'Package delivery', 'Furniture delivery'],
+    'Meeting or appointment': ['Meeting with Executive Director', 'Meeting with program staff', 'Scheduled tour'],
+    'Equipment or facility use': ['AV or equipment setup', 'Building maintenance', 'Photography or filming'],
+    'Vendor or contractor': ['HVAC service', 'IT support', 'Cleaning service']
+  };
+  var matchedChildren = []; // populated by the parent-name lookup below, used when selectedRole is "Parent or family member"
+
+  function updateReasonSuggestions(){
+    var options = (selectedRole === 'Parent or family member')
+      ? matchedChildren
+      : (DEFAULT_REASON_SUGGESTIONS[selectedRole] || []);
+    reasonDatalist.innerHTML = options.map(function(o){
+      return '<option value="' + o.replace(/"/g, '&quot;') + '">';
+    }).join('');
+  }
+
+  function attachRoleChipListeners(){
+    document.querySelectorAll('#roleChips .program-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+        chip.classList.add('selected');
+        selectedRole = chip.dataset.role;
+        if (selectedRole === 'Parent or family member') {
+          visitReasonLabel.textContent = "Child's name";
+          visitReasonInput.placeholder = 'e.g. Maya';
+        } else if (visitType === 'Facility/Business') {
+          visitReasonLabel.textContent = 'Details';
+          visitReasonInput.placeholder = 'e.g. dropping off art supplies, meeting with Ms. Rivera';
+        } else {
+          visitReasonLabel.textContent = 'Reason for visit';
+          visitReasonInput.placeholder = 'e.g. picking up Maya from Art Class';
+        }
+        updateReasonSuggestions();
+      });
     });
+  }
+
+  function renderRoleChips(type){
+    var roles = (type === 'Facility/Business') ? BUSINESS_ROLES : FAMILY_ROLES;
+    roleChipsEl.innerHTML = roles.map(function(r){
+      return '<button type="button" class="program-chip" data-role="' + r.role + '">' + r.label + '</button>';
+    }).join('');
+    selectedRole = '';
+    attachRoleChipListeners();
+    updateReasonSuggestions();
+    if (type === 'Facility/Business') {
+      roleChipsIntro.textContent = "I'm here for...";
+      visitReasonLabel.textContent = 'Details';
+      visitReasonInput.placeholder = 'e.g. dropping off art supplies, meeting with Ms. Rivera';
+    } else {
+      roleChipsIntro.textContent = "I'm here as a...";
+      visitReasonLabel.textContent = 'Reason for visit';
+      visitReasonInput.placeholder = 'e.g. picking up Maya from Art Class';
+    }
+  }
+
+  attachRoleChipListeners();
+
+  document.querySelectorAll('#visitTypeToggle .program-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#visitTypeToggle .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      visitType = chip.dataset.visittype;
+      renderRoleChips(visitType);
+    });
+  });
+
+  // As soon as someone types their own name and moves on, quietly check
+  // whether they're a parent on file and, if so, fetch their registered
+  // children's names — so if they then pick "Parent or family member", the
+  // child's-name field already offers those names as one-tap options instead
+  // of asking them to type it again. Silent no-op for anyone not on file.
+  document.getElementById('visitorName').addEventListener('blur', function(){
+    var typedName = this.value.trim();
+    matchedChildren = [];
+    if (!typedName || !GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) {
+      updateReasonSuggestions();
+      return;
+    }
+    fetch(GOOGLE_SHEETS_WEB_APP_URL + '?action=lookupChildren&parentName=' + encodeURIComponent(typedName))
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if (data && data.found && data.children && data.children.length) {
+          matchedChildren = data.children;
+          updateReasonSuggestions();
+        }
+      })
+      .catch(function(err){ console.warn('Child lookup failed, falling back to manual entry:', err); });
   });
 
   var checkinMode = 'Check-In';
@@ -246,7 +368,9 @@
       if (!visitReason) {
         errorBox.textContent = (selectedRole === 'Parent or family member')
           ? "Please add your child's name."
-          : 'Please add a reason for your visit.';
+          : (visitType === 'Facility/Business')
+            ? 'Please add a few details about your visit.'
+            : 'Please add a reason for your visit.';
         errorBox.style.display = 'block';
         return;
       }
@@ -264,6 +388,7 @@
         formType: 'Sign-In',
         action: checkinMode,
         visitorName: visitorName,
+        visitType: visitType,
         role: selectedRole,
         reason: visitReason,
         contact: visitorContact,
@@ -273,8 +398,11 @@
 
       successBox.style.display = 'block';
       thisForm.reset();
-      selectedRole = '';
-      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      visitType = 'Program/Family';
+      document.querySelectorAll('#visitTypeToggle .program-chip').forEach(function(c){
+        c.classList.toggle('selected', c.dataset.visittype === 'Program/Family');
+      });
+      renderRoleChips('Program/Family');
     }
 
     // Confirms the phone submitting this is actually near the village before
