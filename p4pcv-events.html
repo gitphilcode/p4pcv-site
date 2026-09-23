@@ -34,6 +34,8 @@
   .btn{display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:999px; font-weight:600; font-size:14.5px; border:1.5px solid transparent; cursor:pointer;}
   .btn-primary{background:var(--magenta); color:#fff;}
   .btn-primary:hover{background:var(--magenta-dark);}
+  .btn-outline{background:#fff; color:var(--magenta-dark); border-color:var(--magenta); margin-top:10px;}
+  .btn-outline:hover{background:var(--magenta-tint);}
   .btn-ghost{border-color:var(--line); color:var(--navy); background:#fff;}
   .btn-ghost:hover{background:var(--navy-tint);}
 
@@ -126,6 +128,8 @@
       TEMPLATE — copy this block into #upcomingList to add a real event. Two variants below:
       ticketed (paid) and RSVP (free). data-date must be YYYY-MM-DD — the page automatically
       moves this card down into Recent Events once that date has passed, no manual work needed.
+      A "Day-of check-in" link is also added to every card automatically once the page loads —
+      nothing to add here for that.
 
       TICKETED EXAMPLE:
       <div class="event-card" data-date="2026-11-15" data-type="upcoming">
@@ -328,6 +332,30 @@
     sendToSheet({ formType: 'Events', event: form.dataset.event, name: name, email: email });
     form.querySelector('.rsvp-msg').style.display = 'block';
     form.reset();
+  });
+
+  // Adds a "Day-of check-in" link to every upcoming event card automatically —
+  // nothing to edit per event, no manual link-building. It points to the
+  // off-site event check-in page with the event's name already filled in and
+  // locked, built from the RSVP form's data-event (if there is one) or the
+  // card's own title otherwise. That page has no location check, so it works
+  // whether the event is at the village or somewhere else — print it as a QR
+  // for the door, or just let people tap it on their phone. For an event
+  // that's happening here on-site, front desk staff can also just use the
+  // regular Sign-In page's "Event today?" field — either one lands in the
+  // same Event Attendance sheet.
+  document.querySelectorAll('#upcomingList .event-card').forEach(function(card){
+    var detail = card.querySelector('.event-detail');
+    if (!detail || detail.querySelector('.event-checkin-link')) return;
+    var rsvpForm = card.querySelector('.rsvp-form');
+    var titleEl = card.querySelector('h3');
+    var eventName = (rsvpForm && rsvpForm.dataset.event) || (titleEl ? titleEl.textContent.trim() : '');
+    if (!eventName) return;
+    var link = document.createElement('a');
+    link.className = 'btn btn-outline event-checkin-link';
+    link.href = 'p4pcv-event-checkin.html?event=' + encodeURIComponent(eventName);
+    link.textContent = 'Day-of check-in →';
+    detail.appendChild(link);
   });
 
   // If arriving from a link like p4pcv-events.html#event-gala, open that card and scroll to it.

@@ -106,7 +106,13 @@
       </div>
 
       <div id="checkinExtraFields">
-        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">Estoy aquí como...</p>
+        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;">¿A qué vienes hoy?</p>
+        <div class="program-chips" id="visitTypeToggle" style="margin-bottom:18px;">
+          <button type="button" class="program-chip selected" data-visittype="Program/Family">Visita por un niño(a) o programa</button>
+          <button type="button" class="program-chip" data-visittype="Facility/Business">Entrega, reunión o visita de instalaciones</button>
+        </div>
+
+        <p style="font-size:13px; color:var(--ink-mute); margin-top:-10px; margin-bottom:14px;" id="roleChipsIntro">Estoy aquí como...</p>
         <div class="program-chips" id="roleChips">
           <button type="button" class="program-chip" data-role="Madre, padre o familiar">Madre, padre o familiar</button>
           <button type="button" class="program-chip" data-role="Voluntario(a)">Voluntario(a)</button>
@@ -118,13 +124,30 @@
         <div class="field-row">
           <div class="field">
             <label for="visitReason" id="visitReasonLabel">Motivo de la visita</label>
-            <input type="text" id="visitReason" placeholder="ej. recogiendo a Maya de la clase de arte" required>
+            <input type="text" id="visitReason" list="reasonSuggestions" placeholder="ej. recogiendo a Maya de la clase de arte" required>
+            <datalist id="reasonSuggestions"></datalist>
           </div>
         </div>
         <div class="field-row">
           <div class="field">
             <label for="visitorContact" id="visitorContactLabel">Teléfono o correo electrónico</label>
             <input type="text" id="visitorContact" placeholder="Número de teléfono o correo electrónico">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="visitEvent">¿Evento hoy? (opcional)</label>
+            <input type="text" id="visitEvent" list="eventSuggestions" placeholder="ej. Festival de Otoño — deja en blanco si es una visita regular">
+            <!-- Agrega o edita nombres de eventos aquí a medida que surjan, para que la
+                 recepción pueda tocar en vez de escribir — escribir algo que no esté en
+                 la lista también funciona. Cualquiera que llene este campo (haya
+                 confirmado asistencia o no) queda registrado como asistente real de
+                 ese evento en la hoja de Asistencia a Eventos. -->
+            <datalist id="eventSuggestions">
+              <option value="Festival de Otoño">
+              <option value="Lanzamiento de Educación Financiera">
+            </datalist>
           </div>
         </div>
       </div>
@@ -183,22 +206,139 @@
     }).catch(function(err){ console.warn('Sheet submission failed:', err); });
   }
 
+  // Un solo formulario de registro (y un solo código QR en recepción) cubre dos
+  // tipos de visita en vez de una página aparte: "Program/Family" es el flujo
+  // original de niño(a)/voluntario(a)/socio, y "Facility/Business" es para
+  // entregas, recogidas, reuniones, citas, y uso de equipo/instalaciones.
+  // Elegir un tipo de visita cambia los chips de rol que se muestran; ambos
+  // alimentan la misma hoja de Sign-In con una columna Visit Type añadida para
+  // poder filtrarlos por separado después.
+  var FAMILY_ROLES = [
+    {role:'Madre, padre o familiar', label:'Madre, padre o familiar'},
+    {role:'Voluntario(a)', label:'Voluntario(a)'},
+    {role:'Socio comunitario o corporativo', label:'Socio comunitario o corporativo'},
+    {role:'Participante del programa', label:'Participante del programa'},
+    {role:'Otro', label:'Otro'}
+  ];
+  var BUSINESS_ROLES = [
+    {role:'Entrega o recogida', label:'Entrega / recogida'},
+    {role:'Reunión o cita', label:'Reunión / cita'},
+    {role:'Uso de equipo o instalaciones', label:'Uso de equipo / instalaciones'},
+    {role:'Proveedor o contratista', label:'Proveedor / contratista'},
+    {role:'Otro', label:'Otro'}
+  ];
+
+  var visitType = 'Program/Family';
   var selectedRole = '';
+  var roleChipsEl = document.getElementById('roleChips');
+  var roleChipsIntro = document.getElementById('roleChipsIntro');
   var visitReasonLabel = document.getElementById('visitReasonLabel');
   var visitReasonInput = document.getElementById('visitReason');
-  document.querySelectorAll('#roleChips .program-chip').forEach(function(chip){
-    chip.addEventListener('click', function(){
-      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
-      chip.classList.add('selected');
-      selectedRole = chip.dataset.role;
-      if (selectedRole === 'Madre, padre o familiar') {
-        visitReasonLabel.textContent = 'Nombre del niño(a)';
-        visitReasonInput.placeholder = 'ej. Maya';
-      } else {
-        visitReasonLabel.textContent = 'Motivo de la visita';
-        visitReasonInput.placeholder = 'ej. recogiendo a Maya de la clase de arte';
-      }
+  var reasonDatalist = document.getElementById('reasonSuggestions');
+
+  // El campo de motivo/detalles sigue siendo un cuadro de texto (no solo
+  // chips) porque lo que se escribe aquí es específico de esa visita — el
+  // nombre de un niño(a), con quién es la reunión, qué se está entregando —
+  // algo que botones fijos no pueden cubrir. Pero funciona como un "combo
+  // box" (un campo de texto junto a un <datalist>) para que quien ya visitó
+  // antes tenga opciones de un clic en vez de volver a escribir: sugerencias
+  // genéricas por rol abajo, más — para "Madre, padre o familiar" — los
+  // hijos ya registrados de esa familia, buscados en cuanto escriben su
+  // nombre (ver el listener de "blur" más abajo). Escribir algo nuevo
+  // siempre sigue funcionando; el menú es un atajo, no un límite.
+  var DEFAULT_REASON_SUGGESTIONS = {
+    'Voluntario(a)': ['Clase de Arte', 'Boot Camp', 'Recyclers', 'Laboratorio de Tecnología', 'Formación en Barbería y Cosmetología', 'Estudio de Podcast', 'Recepción', 'Montaje de evento'],
+    'Socio comunitario o corporativo': ['Visita al sitio', 'Reunión de colaboración', 'Entrega de donación', 'Recorrido'],
+    'Participante del programa': ['Clase de Arte', 'Boot Camp', 'Recyclers', 'Laboratorio de Tecnología', 'Formación en Barbería y Cosmetología', 'Estudio de Podcast'],
+    'Entrega o recogida': ['Entrega de materiales de arte', 'Entrega de comida o catering', 'Entrega de paquete', 'Entrega de muebles'],
+    'Reunión o cita': ['Reunión con la Directora Ejecutiva', 'Reunión con el personal del programa', 'Recorrido programado'],
+    'Uso de equipo o instalaciones': ['Montaje de audio/video o equipo', 'Mantenimiento del edificio', 'Fotografía o filmación'],
+    'Proveedor o contratista': ['Servicio de HVAC', 'Soporte de TI', 'Servicio de limpieza']
+  };
+  var matchedChildren = []; // se llena con la búsqueda por nombre de padre/madre más abajo, usada cuando selectedRole es "Madre, padre o familiar"
+
+  function updateReasonSuggestions(){
+    var options = (selectedRole === 'Madre, padre o familiar')
+      ? matchedChildren
+      : (DEFAULT_REASON_SUGGESTIONS[selectedRole] || []);
+    reasonDatalist.innerHTML = options.map(function(o){
+      return '<option value="' + o.replace(/"/g, '&quot;') + '">';
+    }).join('');
+  }
+
+  function attachRoleChipListeners(){
+    document.querySelectorAll('#roleChips .program-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+        chip.classList.add('selected');
+        selectedRole = chip.dataset.role;
+        if (selectedRole === 'Madre, padre o familiar') {
+          visitReasonLabel.textContent = 'Nombre del niño(a)';
+          visitReasonInput.placeholder = 'ej. Maya';
+        } else if (visitType === 'Facility/Business') {
+          visitReasonLabel.textContent = 'Detalles';
+          visitReasonInput.placeholder = 'ej. entregando materiales de arte, reunión con la Sra. Rivera';
+        } else {
+          visitReasonLabel.textContent = 'Motivo de la visita';
+          visitReasonInput.placeholder = 'ej. recogiendo a Maya de la clase de arte';
+        }
+        updateReasonSuggestions();
+      });
     });
+  }
+
+  function renderRoleChips(type){
+    var roles = (type === 'Facility/Business') ? BUSINESS_ROLES : FAMILY_ROLES;
+    roleChipsEl.innerHTML = roles.map(function(r){
+      return '<button type="button" class="program-chip" data-role="' + r.role + '">' + r.label + '</button>';
+    }).join('');
+    selectedRole = '';
+    attachRoleChipListeners();
+    updateReasonSuggestions();
+    if (type === 'Facility/Business') {
+      roleChipsIntro.textContent = 'Estoy aquí para...';
+      visitReasonLabel.textContent = 'Detalles';
+      visitReasonInput.placeholder = 'ej. entregando materiales de arte, reunión con la Sra. Rivera';
+    } else {
+      roleChipsIntro.textContent = 'Estoy aquí como...';
+      visitReasonLabel.textContent = 'Motivo de la visita';
+      visitReasonInput.placeholder = 'ej. recogiendo a Maya de la clase de arte';
+    }
+  }
+
+  attachRoleChipListeners();
+
+  document.querySelectorAll('#visitTypeToggle .program-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#visitTypeToggle .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      visitType = chip.dataset.visittype;
+      renderRoleChips(visitType);
+    });
+  });
+
+  // En cuanto alguien escribe su propio nombre y pasa al siguiente campo, se
+  // verifica en silencio si es un padre/madre registrado y, si es así, se
+  // obtienen los nombres de sus hijos — así, si luego elige "Madre, padre o
+  // familiar", el campo de nombre del niño(a) ya ofrece esos nombres como
+  // opciones de un toque en vez de pedir que los escriban de nuevo. No hace
+  // nada si la persona no está en el archivo.
+  document.getElementById('visitorName').addEventListener('blur', function(){
+    var typedName = this.value.trim();
+    matchedChildren = [];
+    if (!typedName || !GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_YOUR') === 0) {
+      updateReasonSuggestions();
+      return;
+    }
+    fetch(GOOGLE_SHEETS_WEB_APP_URL + '?action=lookupChildren&parentName=' + encodeURIComponent(typedName))
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if (data && data.found && data.children && data.children.length) {
+          matchedChildren = data.children;
+          updateReasonSuggestions();
+        }
+      })
+      .catch(function(err){ console.warn('Falló la búsqueda de hijos, usando entrada manual:', err); });
   });
 
   var checkinMode = 'Check-In';
@@ -235,6 +375,7 @@
     var visitorName = document.getElementById('visitorName').value.trim();
     var visitReason = document.getElementById('visitReason').value.trim();
     var visitorContact = document.getElementById('visitorContact').value.trim();
+    var visitEvent = document.getElementById('visitEvent').value.trim();
 
     if (!visitorName) {
       errorBox.textContent = 'Por favor añade tu nombre para poder registrarte.';
@@ -246,7 +387,9 @@
       if (!visitReason) {
         errorBox.textContent = (selectedRole === 'Madre, padre o familiar')
           ? 'Por favor añade el nombre de tu hijo(a).'
-          : 'Por favor añade un motivo para tu visita.';
+          : (visitType === 'Facility/Business')
+            ? 'Por favor añade algunos detalles sobre tu visita.'
+            : 'Por favor añade un motivo para tu visita.';
         errorBox.style.display = 'block';
         return;
       }
@@ -264,17 +407,22 @@
         formType: 'Sign-In',
         action: checkinMode,
         visitorName: visitorName,
+        visitType: visitType,
         role: selectedRole,
         reason: visitReason,
         contact: visitorContact,
+        event: visitEvent,
         signedInAt: new Date().toLocaleString(),
         locationStatus: locationStatus
       });
 
       successBox.style.display = 'block';
       thisForm.reset();
-      selectedRole = '';
-      document.querySelectorAll('#roleChips .program-chip').forEach(function(c){ c.classList.remove('selected'); });
+      visitType = 'Program/Family';
+      document.querySelectorAll('#visitTypeToggle .program-chip').forEach(function(c){
+        c.classList.toggle('selected', c.dataset.visittype === 'Program/Family');
+      });
+      renderRoleChips('Program/Family');
     }
 
     // Confirma que el teléfono que envía esto realmente está cerca de la aldea
